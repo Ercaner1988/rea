@@ -60,6 +60,12 @@ it(
         "compare_web_screenshots",
       ]),
     );
+    for (const name of ["compare_web_captures", "compare_web_screenshots"]) {
+      const tool = tools.tools.find((candidate) => candidate.name === name);
+      expect(tool).toBeDefined();
+      expect(JSON.stringify(tool?.inputSchema)).not.toContain('"$ref"');
+      expect(tool?.inputSchema).not.toHaveProperty("$defs");
+    }
     const status = await connected.client.callTool({
       name: "binary_session",
       arguments: {},

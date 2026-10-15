@@ -19,6 +19,7 @@ export const applicationValidatedInputSchema = (
 /** Project the canonical Zod contracts directly into SDK registration. */
 export const toolRegistrationOptions = <Contract extends ToolContract>(
   contract: Contract,
+  options: { readonly inlineInputReferences?: boolean } = {},
 ): {
   readonly title: Contract["title"];
   readonly description: Contract["description"];
@@ -28,7 +29,12 @@ export const toolRegistrationOptions = <Contract extends ToolContract>(
 } => ({
   title: contract.title,
   description: contract.description,
-  inputSchema: toolInputSchemaWithMetadata(contract),
+  inputSchema: toolInputSchemaWithMetadata(
+    contract,
+    options.inlineInputReferences === undefined
+      ? {}
+      : { inlineReferences: options.inlineInputReferences },
+  ),
   outputSchema: toolOutputSchemaWithMetadata(contract),
   annotations: contract.annotations,
 });

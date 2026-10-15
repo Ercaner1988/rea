@@ -160,7 +160,10 @@ export const registerBrowserTools = (
   );
   server.registerTool(
     screenshotDiffContract.name,
-    toolRegistrationOptions(screenshotDiffContract),
+    // Keep the small artifact schema inline for Claude Desktop's MCP bridge.
+    toolRegistrationOptions(screenshotDiffContract, {
+      inlineInputReferences: true,
+    }),
     (input, context) =>
       runBrowserTool(
         registration,

@@ -59,29 +59,34 @@ type JsonSchemaProjection = z.ZodType["~standard"]["jsonSchema"]["input"];
 /** Attach caller guidance to a canonical schema for the SDK wire projection. */
 export const toolInputSchemaWithMetadata = <Contract extends ToolContract>(
   contract: Contract,
+  presentationOptions: { readonly inlineReferences?: boolean } = {},
 ): Contract["inputSchema"] =>
   withAdvertisedJsonSchema(
     contract.inputSchema,
     "input",
-    (project) => (options) => {
-      const shared = project({
-        ...options,
-        libraryOptions: { reused: "ref", ...options.libraryOptions },
+    (project) => (projectOptions) => {
+      const preferredProjection = project({
+        ...projectOptions,
+        libraryOptions: {
+          reused: presentationOptions.inlineReferences ? "inline" : "ref",
+          ...projectOptions.libraryOptions,
+        },
       });
       const examples = advertisedInputExamples(contract);
       return {
-        // Sharing definitions only helps clients that resolve them. A client
-        // rendering declarations from a shared expansion budget degrades
-        // every reference past it to `unknown`, so an input whose shared form
-        // exceeds the budget is re-projected without shared definitions.
+        // Keep schemas inline for clients that cannot resolve local refs. For
+        // other clients, use them only while the expansion stays in budget.
         ...inputSchemaWithinReferenceExpansionBudget(
-          presentInputJsonSchema(shared, fallbackPropertyDescription),
+          presentInputJsonSchema(
+            preferredProjection,
+            fallbackPropertyDescription,
+          ),
           () =>
             presentInputJsonSchema(
               project({
-                ...options,
+                ...projectOptions,
                 libraryOptions: {
-                  ...options.libraryOptions,
+                  ...projectOptions.libraryOptions,
                   reused: "inline",
                 },
               }),
