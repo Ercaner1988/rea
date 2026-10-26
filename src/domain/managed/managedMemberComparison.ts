@@ -10,9 +10,8 @@ import {
 } from "./managedArtifact.js";
 import {
   buildComparisonCoverage,
-  compareSelectedTypes,
   hasCompleteMethodRows,
-  selectedDeclaringTypes,
+  managedComparisonScope,
   buildComparisonMatching,
   buildComparisonSummary,
   comparisonLimitations,
@@ -24,8 +23,7 @@ import {
 } from "./managedMemberComparisonItems.js";
 import { keyMembers } from "./managedMemberComparisonMatch.js";
 import { hasSignatureResolution } from "./managedMemberSignatureIdentity.js";
-import { digestSchema } from "../digests.js";
-import { prefixedDigestSchema } from "../digests.js";
+import { digestSchema, prefixedDigestSchema } from "../digests.js";
 
 const evidenceIdSchema = prefixedDigestSchema("ev");
 const boundedTextSchema = z.string().min(1);
@@ -260,7 +258,8 @@ export const compareManagedMembers = (
   left: ManagedMemberComparisonSide,
   right: ManagedMemberComparisonSide,
 ): ManagedMemberComparisonResult => {
-  const { methodMatches, fieldMatches } = keyMembers(left, right);
+  const scope = managedComparisonScope(left.result, right.result);
+  const { methodMatches, fieldMatches } = keyMembers(left, right, scope);
   const itemContext = {
     leftEvidenceId: left.evidenceId,
     rightEvidenceId: right.evidenceId,
@@ -272,8 +271,7 @@ export const compareManagedMembers = (
     rightMethodsComplete:
       right.result.metadata.status === "complete" &&
       hasCompleteMethodRows(right.result),
-    leftSelection: selectedDeclaringTypes(left.result),
-    rightSelection: selectedDeclaringTypes(right.result),
+    scope,
     signatureResolutionExamined:
       hasSignatureResolution(left.result) &&
       hasSignatureResolution(right.result),
@@ -289,7 +287,7 @@ export const compareManagedMembers = (
   const allItems = [...methodItems, ...fieldItems];
   const summary = buildComparisonSummary(allItems);
   const matching = buildComparisonMatching(methodItems, fieldItems);
-  const selectionAgreement = compareSelectedTypes(left.result, right.result);
+  const selectionAgreement = scope.agreement;
   const coverage = buildComparisonCoverage({
     left: left.result,
     right: right.result,
