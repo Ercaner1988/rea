@@ -63,6 +63,18 @@ if (!(await compiledRuntimeExists(runtimeFiles))) {
   );
   process.exitCode = 1;
 } else if (entry?.kind === "mcp-stdio") {
+  // Kademe 2 Ebeveyn Kalp Atisi: Ebeveyn surec sonlanirsa kendini otomatik imha et (zombi onleme)
+  if (process.ppid && process.ppid > 0) {
+    const parentWatcher = setInterval(() => {
+      try {
+        process.kill(process.ppid, 0);
+      } catch {
+        clearInterval(parentWatcher);
+        process.exit(0);
+      }
+    }, 5000);
+    parentWatcher.unref?.();
+  }
   const { runEntrypoint } = await import("../dist/mcp/main.js");
   await runEntrypoint();
 } else if (entry?.kind === "mcp-http") {
