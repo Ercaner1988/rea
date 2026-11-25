@@ -21,10 +21,7 @@ const { default: packageJson } = await import("../package.json", {
 // would still reach the imports below.
 const unsupportedRuntime = process.versions.bun
   ? undefined
-  : unsupportedRuntimeMessage(
-      packageJson.engines?.node,
-      process.versions.node,
-    );
+  : unsupportedRuntimeMessage(packageJson.engines?.node, process.versions.node);
 if (unsupportedRuntime !== undefined) {
   process.stderr.write(`${unsupportedRuntime}\n`);
   process.exit(1);
