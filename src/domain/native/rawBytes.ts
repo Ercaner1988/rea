@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { byteToHex } from "../../kernel/byteToHex.js";
 import { localPathStringSchema } from "../localPath.js";
 import {
   bytePatternFields,
@@ -115,8 +116,6 @@ export const searchRawBytesSchema = z.strictObject({
 });
 export type SearchRawBytes = z.infer<typeof searchRawBytesSchema>;
 
-const hex = (byte: number): string => byte.toString(16).padStart(2, "0");
-
 /**
  * Render bytes in xxd layout: eight-digit absolute offset, sixteen bytes in
  * four-hex-digit groups, then printable ASCII with `.` for everything else.
@@ -134,7 +133,7 @@ export const formatHexDump = (
     let ascii = "";
     for (let index = 0; index < line.length; index += 2)
       groups.push(
-        `${hex(line[index]!)}${index + 1 < line.length ? hex(line[index + 1]!) : ""}`,
+        `${byteToHex(line[index]!)}${index + 1 < line.length ? byteToHex(line[index + 1]!) : ""}`,
       );
     for (const byte of line)
       ascii += byte >= 0x20 && byte <= 0x7e ? String.fromCharCode(byte) : ".";
