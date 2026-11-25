@@ -6,10 +6,8 @@ import {
   inspectRawBytesSchema,
   searchRawBytesSchema,
 } from "../../domain/native/rawBytes.js";
-import {
-  RawBytesService,
-  RAW_BYTES_SCAN_CHUNK_BYTES,
-} from "./RawBytesService.js";
+import { RawBytesService } from "./RawBytesService.js";
+import { RAW_BYTES_SCAN_CHUNK_BYTES } from "./RawBytesScan.js";
 
 const PE_SIGNATURE = [0x50, 0x45, 0x00, 0x00];
 const PE_HEADER_TAIL = [
@@ -507,6 +505,44 @@ describe.each([
     opName: "search_raw_bytes",
   },
 ])("lifecycle suite for $operation", ({ operation, call, opName }) => {
+  it("preserves cancellation during a read when closing fails and later succeeds", async () => {
+    const path = await fileWith(`rea-raw-${operation}-read-cancel-`, 128, []);
+    const controller = new AbortController();
+    const reason = new Error("cancelled during read");
+    let failClose = true;
+    const service = new RawBytesService({
+      stat,
+      open: async (...args) => {
+        const file = await open(...args);
+        const read = file.read.bind(file);
+        const close = file.close.bind(file);
+        vi.spyOn(file, "read").mockImplementation(async (...readArgs) => {
+          const result = await read(...readArgs);
+          controller.abort(reason);
+          return result;
+        });
+        vi.spyOn(file, "close").mockImplementation(async () => {
+          if (failClose) throw new Error("injected close failure");
+          await close();
+        });
+        return file;
+      },
+    });
+
+    const result = await call(service, path, { signal: controller.signal });
+    if (result.ok) throw new Error("Expected cancellation during read");
+    expect(result.error).toMatchObject({
+      _tag: "AnalysisCancelledError",
+      cleanupIncomplete: true,
+      secondaryFailures: [{ _tag: "AnalysisOutputError" }],
+    });
+    expect(result.error.cause).toBe(reason);
+    expect(result.error.partialObservation).toBeUndefined();
+    failClose = false;
+    await service.close();
+    expect(result.error.cleanupIncomplete).toBe(false);
+  });
+
   it.each([false, true])(
     "retains completed Evidence when final close is cancelled (close fails: %s)",
     async (closeFails) => {

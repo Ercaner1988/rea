@@ -9,8 +9,9 @@ import {
   AnalysisOutputError,
   AnalysisAccessDeniedError,
   AnalysisArtifactChangedError,
-  AnalysisCancelledError,
   AnalysisInputError,
+  cancelledBy,
+  carriedReason,
 } from "../../domain/analysisErrorCore.js";
 import { createEvidence, type Evidence } from "../../domain/evidence.js";
 import {
@@ -34,7 +35,7 @@ import {
   artifactSelectedPathErrno,
   ArtifactReaderFailure,
 } from "../../resources/index.js";
-import { analysisErrorWithCleanupFailure } from "../../domain/analysisErrorCleanup.js";
+import { analysisErrorWithCleanupDependencies } from "../../domain/analysisErrorCleanup.js";
 import { sameRegularFileState } from "../../filesystem/RegularFile.js";
 import { completeProviderEvidence } from "../ProviderOperationExecution.js";
 import { classifyProviderFailure } from "../../providers/classifyProviderFailure.js";
@@ -44,8 +45,6 @@ import {
   scanForPattern,
   type AdmittedFile,
 } from "./RawBytesScan.js";
-
-export { RAW_BYTES_SCAN_CHUNK_BYTES } from "./RawBytesScan.js";
 
 const INSPECT = "inspect_raw_bytes";
 const SEARCH = "search_raw_bytes";
@@ -416,43 +415,44 @@ export class RawBytesService {
           outcome.cause instanceof ArtifactReaderFailure &&
           outcome.cause.reason === "cancelled"
         ) {
-          const cancelled = new AnalysisCancelledError(operation, {
-            cause: artifactFileCancellationCause(outcome.cause),
-            cleanup: cause.cleanup,
-          }).retainSecondaryFailure(cleanup);
+          const cancelled = cancelledBy(
+            operation,
+            carriedReason(artifactFileCancellationCause(outcome.cause)),
+            { cleanup: cause.cleanup },
+          ).retainSecondaryFailure(cleanup);
           bindArtifactFileCleanup(cause, cancelled);
           return err(cancelled);
         }
         const cancellation = completion?.cancellation;
         if (cancellation !== undefined) {
-          const cancelled = new AnalysisCancelledError(operation, {
-            cause: cancellation.reason,
-            partialObservation: cleanup.partialObservation,
-            cleanup: cause.cleanup,
-          }).retainSecondaryFailure(cleanup);
+          const cancelled = cancelledBy(
+            operation,
+            carriedReason(cancellation.reason),
+            {
+              partialObservation: cleanup.partialObservation,
+              cleanup: cause.cleanup,
+            },
+          ).retainSecondaryFailure(cleanup);
           bindArtifactFileCleanup(cause, cancelled);
           return err(cancelled);
         }
         if (outcome.kind === "failed") {
           const primary = readFailure(outcome.cause);
           return err(
-            analysisErrorWithCleanupFailure(
-              primary,
-              cleanup,
-              operation,
-            ).bindCleanupDependencies([primary, cleanup]),
+            analysisErrorWithCleanupDependencies(primary, cleanup, operation),
           );
         }
         return err(cleanup);
       }
       if (cause instanceof ArtifactReaderFailure) {
         if (cause.reason === "cancelled") {
-          const cancelled = new AnalysisCancelledError(operation, {
-            cause: artifactFileCancellationCause(cause),
-            ...(completion === undefined
+          const cancelled = cancelledBy(
+            operation,
+            carriedReason(artifactFileCancellationCause(cause)),
+            completion === undefined
               ? {}
-              : { partialObservation: completedObservation(completion.value) }),
-          });
+              : { partialObservation: completedObservation(completion.value) },
+          );
           bindArtifactFileCleanup(cause, cancelled);
           return err(cancelled);
         }
