@@ -435,7 +435,7 @@ constant memory for retained Evidence or faster agent task completion.
 `search-raw-bytes` read a local file as stored on disk, without an analysis
 engine, a loader, extraction or network access. They suit files that are not
 loaded as an analyzed program, such as game data archives and containers. The
-[MCP contracts](mcp-contracts.md#raw-file-offsets-versus-program-memory-addresses)
+[MCP contracts](../../reference/mcp-contracts.md#raw-file-offsets-versus-program-memory-addresses)
 explain when to use them instead of `read_bytes` and `search_bytes`.
 
 ```sh

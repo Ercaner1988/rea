@@ -1839,7 +1839,7 @@ the bytes themselves. Pass a program address to `read_bytes` and a file offset t
 rejected before the file is opened) and an out-of-range window is an error.
 `search_raw_bytes` streams the file, caps matches per page and pages with
 `start_offset`/`next_offset`. Both return complete Evidence and are described in
-[Raw file bytes](binary-diagnostics.md#raw-file-bytes).
+[Raw file bytes](../guides/native/binary-diagnostics.md#raw-file-bytes).
 
 ## Editable analysis settings
 
