@@ -976,6 +976,20 @@ export const PROVIDER_LIFECYCLE_COVERAGE: Readonly<
       ),
     },
   },
+  "raw-bytes": inProcess(
+    covered(
+      test(
+        "src/application/binaryDiagnostics/RawBytesService.test.ts",
+        "returns the exact bytes and the xxd dump for a known window",
+      ),
+    ),
+    covered(
+      test(
+        "src/application/binaryDiagnostics/RawBytesService.test.ts",
+        "honors cancellation before admission and during the scan",
+      ),
+    ),
+  ),
   "pwntools-elf": {
     ownership: "process",
     stages: {
