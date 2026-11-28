@@ -1017,6 +1017,32 @@ export const PROVIDER_LIFECYCLE_COVERAGE: Readonly<
       ),
     },
   },
+  "raw-bytes": inProcess(
+    covered(
+      test(
+        "tests/acceptance/rawBytesCli.test.ts",
+        "reads a raw file slice through the public CLI",
+      ),
+      test(
+        "tests/acceptance/rawBytesCli.test.ts",
+        "searches a raw file through the public CLI",
+      ),
+    ),
+    covered(
+      test(
+        "src/application/binaryDiagnostics/RawBytesService.test.ts",
+        "honors cancellation before admission and during the scan",
+      ),
+      test(
+        "src/application/binaryDiagnostics/RawBytesService.test.ts",
+        "preserves cancellation during a read when closing fails and later succeeds",
+      ),
+      test(
+        "src/application/binaryDiagnostics/RawBytesService.test.ts",
+        "retains completed Evidence when final close is cancelled (close fails: %s)",
+      ),
+    ),
+  ),
   "rea-analysis-view": inProcess(
     covered(
       test(
